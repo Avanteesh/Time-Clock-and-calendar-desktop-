@@ -5,9 +5,6 @@ from time import strftime
 from requests import get
 from json import loads, dumps
 from os import path, mkdir
-from dotenv import load_dotenv
-
-load_dotenv() 
 
 class Window:
     # window_initializer
