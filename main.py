@@ -1,10 +1,14 @@
 import tkinter as tk
 import customtkinter as ctk
+import notify2 as notify
 from calendar import monthcalendar
 from time import strftime
 from requests import get
 from json import loads, dumps
 from os import path, mkdir
+from dotenv import load_dotenv
+
+load_dotenv() 
 
 class Window:
     # window_initializer
@@ -142,13 +146,16 @@ def saveFormData(parent, datalist):
             f2.write(dumps(currentdata))   # dump json string
             parent.destroy()              # terminate the parent window!
         return  # exit
+    fetched_json = ""
     with open(path.join(_dirname_, config_file), "r") as f1:
-        with open(path.join(_dirname_,config_file), "w") as f2:
-            if f1.read() == "":   # if file exists but is empty append the data
-                f2.write(dumps(currentdata))
-            else:
-                extended = loads(f1.read())+currentdata # otherwise parse json to dictionary-list and extend
-                f2.write(dumps(extended))
+        fetched_json = f1.read()
+    with open(path.join(_dirname_,config_file), "w") as f2:
+        if fetched_json == "":
+            fetched_json = currentdata
+        else:
+            fetched_json = loads(fetched_json) + currentdata 
+            # otherwise parse json to dictionary-list and extend
+        f2.write(dumps(fetched_json))
     parent.destroy()   # terminate the parent window after storing the data!
     return
 
@@ -185,6 +192,25 @@ def alarmInputForm():
     formroot.mainloop()     # form window loop
     return
 
+def subtractTime(inittimestring):
+    target = list(map(int, inittimestring.split(":"))) 
+    now = list(map(int, strftime("%H:%M").split(":")))
+    if target[0] == now[0]:
+        if (target[1]-now[1] < 0):
+            return (23, abs(target[1]-now[1]))
+        return (0, target[1]-now[1])
+    elif target[0] < now[0]:
+        hour_diff = (24-now[0]) + target[0]
+        if now[1] > target[1]:
+            return (hour_diff-1,(60-now[1] + target[1]))
+        else:
+            return (hour_diff, target[1]-now[1])
+    hour_diff = target[0] - now[0]
+    minute_diff = target[1] - now[1]
+    if minute_diff < 0:
+        return (23,abs(minute_diff))
+    return (hour_diff, minute_diff)
+
 def alarmMenu(parent, parent_height,parent_width):
     newAlarmBtn = ctk.CTkButton(
       parent,text="new alarm",height=50,width=80,
@@ -194,39 +220,48 @@ def alarmMenu(parent, parent_height,parent_width):
       parent,width=parent_width*0.89,
       height=parent_height*0.62
     )
+    alarmsMenu.grid(padx=3,pady=3)
+    alarmsMenu.place(relx=0.5,rely=0.63,anchor=tk.CENTER)
     json_folder = path.join("My-Clock-utils", "alarms.json")
+    no_data_label = ctk.CTkLabel(
+      parent,text="No Alarms here!",
+      font=('monospace',40),text_color="yellow"
+    )
     if path.exists("My-Clock-utils") == False or path.exists(json_folder) == False:
-        no_data_label = ctk.CTkLabel(
-          parent,text="No Alarms here!",
-          font=('monospace',40),text_color="yellow"
-        )
         no_data_label.place(relx=0.5,rely=0.2,anchor=tk.CENTER)
     else:
         json_dump = ""    # fetched data from file!
         with open(json_folder, "r") as f2:
-            json_dump = loads(f2.read())
-        y_init = 0.04   # initial y-position of the first widget
-        for data in json_dump:
-            timestring = f"{data["hours"]}:{data["minute"]}"
-            tablist = ctk.Tabview(
-              alarmsMenu,height=50,width=parent_width*0.75,
-              border_color="#149cfc",border_width="3",corner_radius=8
-            )
-            alarmTime_label = ctk.CTkLabel(
-              tablist,text=timestring,font=('monospace',35)
-            )
-            tablist.grid(padx=3,pady=3)
-            alarmTime.grid(padx=3,pady=3)
-            alarmTime.place(relx=0.1,rely=0.3,anchor=tk.CENTER)
-            tablist.place(
-              relx=0.5,rely=y_init/(parent_height*0.62)*100,
-              anchor=tk.CENTER
-            )
-            y_init += 0.9   # update y_position of the box
+            json_dump = f2.read()
+        if json_dump == "":
+            no_data_label.place(relx=0.5,rely=0.2,anchor=tk.CENTER)       
+        else:
+            no_data_label.destroy()   # destroy the not_data_label to display saved data
+            json_dump = loads(json_dump)
+            for data in json_dump:
+                timestring = f"{data["hours"]}:{data["minute"]}"
+                hour_diff, min_diff = subtractTime(timestring)
+                tablist = ctk.CTkTabview(
+                  alarmsMenu,height=120,width=parent_width*0.76,
+                  border_width=3,corner_radius=8,fg_color="#696a6b"
+                )
+                alarmTime_label = ctk.CTkLabel(
+                  tablist,text=timestring,font=('monospace',43)
+                )
+                deleteAlarmBtn = ctk.CTkButton(
+                  tablist,text="delete",height=30,width=37,
+                  fg_color="#ff295b"
+                )
+                alarmNote =  ctk.CTkLabel(
+                  tablist,text=f"{hour_diff} hours {min_diff} minutes to go!",
+                  font=('sans-serif',15),text_color="#b4b8b5"
+                )
+                tablist.grid(padx=4,pady=4)
+                alarmNote.place(relx=0.23,rely=0.75,anchor=tk.CENTER)
+                deleteAlarmBtn.place(relx=0.88,rely=0.5,anchor=tk.CENTER)
+                alarmTime_label.place(relx=0.2,rely=0.5,anchor=tk.CENTER)
     # widget display-positions
     newAlarmBtn.grid(padx=3,pady=3)
-    alarmsMenu.grid(padx=3,pady=3)
-    alarmsMenu.place(relx=0.5,rely=0.63,anchor=tk.CENTER)
     newAlarmBtn.place(relx=0.48,rely=0.089,anchor=tk.CENTER)
     return
 
