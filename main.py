@@ -1,10 +1,12 @@
 import tkinter as tk
 import customtkinter as ctk
+import notify2 as notify
 from calendar import monthcalendar
 from time import strftime
 from requests import get
 from json import loads, dumps
 from os import path, mkdir
+from uuid import uuid4
 
 class Window:
     # window_initializer
@@ -35,9 +37,8 @@ class DefaultCheckBox:
 
 def calendarWidget(root,date,height,width):
     Months = [
-       "January","February","March","April",
-       "May","June","July","August",
-       "September","October","November","December"
+       "January","February","March","April","May","June",
+       "July","August","September","October","November","December"
     ]
     days_of_week = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
     date = list(map(int, date.split("-")))
@@ -50,14 +51,14 @@ def calendarWidget(root,date,height,width):
     calendarChart = monthcalendar(year=date[0],month=date[1])
     init_x, init_y = 0.85,0.28
     spaceing_factor = 0.85
-    Dx, Dy = init_x, init_y
+    d_x, d_y = init_x, init_y
     for days_ in days_of_week:
         label = ctk.CTkLabel(root,text=days_,font=('sans-serif',28,'bold'))
         label.grid(padx=2,pady=2)
-        label.place(relx=Dx/width*100,rely=init_y,anchor=tk.CENTER)
-        Dx += spaceing_factor
-    Dy = init_y + 2.2
-    Dx = init_x
+        label.place(relx=d_x/width*100,rely=init_y,anchor=tk.CENTER)
+        d_x += spaceing_factor
+    d_y = init_y + 2.2
+    d_x = init_x
     for weeks in calendarChart:
         for dates in weeks:
             date_label = ctk.CTkLabel(
@@ -66,10 +67,10 @@ def calendarWidget(root,date,height,width):
               text_color="#0af011" if date[2] == dates else "#fff"
             )
             date_label.grid(padx=2,pady=2)
-            date_label.place(relx=Dx/width*100,rely=Dy/width*100,anchor=tk.CENTER)
-            Dx += spaceing_factor
-        Dx = init_x
-        Dy += spaceing_factor
+            date_label.place(relx=d_x/width*100,rely=d_y/width*100,anchor=tk.CENTER)
+            d_x += spaceing_factor
+        d_x = init_x
+        d_y += spaceing_factor
     return
     
 def renderTime(root, height, width):
@@ -133,6 +134,7 @@ def saveFormData(parent, datalist):
         messagebox = tk.messagebox.showerror("Error", "Input Overflow!")
         return
     currentdata = [{"hours":hours,"minute":minute,"days-to-repeat":datalist["days"]}]
+    currentdata[0]["id"] = str(uuid4())  # create a unique id for alarms
     _dirname_, config_file = "My-Clock-utils", "alarms.json"
     if path.exists(_dirname_) == False:  # if directory doesn't exist or is deleted then create it
         mkdir(_dirname_)  # create configuration directory!
@@ -142,15 +144,12 @@ def saveFormData(parent, datalist):
             f2.write(dumps(currentdata))   # dump json string
             parent.destroy()              # terminate the parent window!
         return  # exit
-    fetched_json = ""
+    fetched_json = None
     with open(path.join(_dirname_, config_file), "r") as f1:
-        fetched_json = f1.read()
+        fetched_json = f1.read()  # read the existing file and fetch the buffer!
     with open(path.join(_dirname_,config_file), "w") as f2:
-        if fetched_json == "":
-            fetched_json = currentdata
-        else:
-            fetched_json = loads(fetched_json) + currentdata 
-            # otherwise parse json to dictionary-list and extend
+    # if file has not json add the new list to existing otherwise concatenate the existing with new!
+        fetched_json = currentdata if fetched_json == "" else loads(fetched_json) + currentdata
         f2.write(dumps(fetched_json))
     parent.destroy()   # terminate the parent window after storing the data!
     return
@@ -246,12 +245,13 @@ def alarmMenu(parent, parent_height,parent_width):
                 )
                 deleteAlarmBtn = ctk.CTkButton(
                   tablist,text="delete",height=30,width=37,
-                  fg_color="#ff295b"
+                  fg_color="#ff295b",command=lambda: deleteAlarmWithId(data["id"])
                 )
                 alarmNote =  ctk.CTkLabel(
                   tablist,text=f"{hour_diff} hours {min_diff} minutes to go!",
                   font=('sans-serif',15),text_color="#b4b8b5"
                 )
+                fireAlarmNotification(parent,timestring)
                 tablist.grid(padx=4,pady=4)
                 alarmNote.place(relx=0.23,rely=0.75,anchor=tk.CENTER)
                 deleteAlarmBtn.place(relx=0.88,rely=0.5,anchor=tk.CENTER)
@@ -259,6 +259,35 @@ def alarmMenu(parent, parent_height,parent_width):
     # widget display-positions
     newAlarmBtn.grid(padx=3,pady=3)
     newAlarmBtn.place(relx=0.48,rely=0.089,anchor=tk.CENTER)
+    return
+
+def deleteAlarmWithId(alarm_id):
+    confirm_dialog = tk.messagebox.askquestion(
+      "alarms","Do you really want to delete this alarm?"
+    )  # confirm from user if he wants to delete the alarm or not
+    if confirm_dialog == "no":
+        return   # if no then just exit
+    alarmlist = None
+    config_path = path.join("My-Clock-utils", "alarms.json")
+    with open(config_path, "r") as f2:
+        alarmlist = loads(f2.read())  # parse stringified json!
+    # find the alarm with id and delete it!
+    for i in range(len(alarmlist)):
+        if alarmlist[i]["id"] == alarm_id:
+            alarmlist.remove(alarmlist[i])  # delete the data
+            break
+    with open(config_path, "w") as f2:
+        f2.write(dumps(alarmlist))   # stringify and save the updated buffer
+    return
+
+def fireAlarmNotification(root, time):
+    notify.init("My Clock")
+    notification = notify.Notification(f"its {time}")
+    def helper():
+        if time == strftime("%H:%M"):
+            notification.show()  # display notification!
+        root.after(10000, helper)
+    helper()
     return
 
 def displayTab(app,_height,_width):
