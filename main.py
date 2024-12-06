@@ -3,7 +3,6 @@ import customtkinter as ctk
 import notify2 as notify
 from calendar import monthcalendar
 from time import strftime
-from requests import get
 from json import loads, dumps
 from os import path, mkdir, getenv
 from uuid import uuid4
