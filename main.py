@@ -7,6 +7,8 @@ from requests import get
 from json import loads, dumps
 from os import path, mkdir
 from uuid import uuid4
+from datetime import date
+from PIL import Image
 
 class Window:
     # window_initializer
@@ -71,6 +73,67 @@ def calendarWidget(root,date,height,width):
             d_x += spaceing_factor
         d_x = init_x
         d_y += spaceing_factor
+    return
+
+def getMoonPhase(_date):
+    lunar_cycle = 29.53088  # lunar cycle is approximately 29.5308 days
+    _date = list(map(int, _date.split("-")))
+    lastnew_moon = date(year=2018,month=12,day=7)
+    current = date(year=_date[0],month=_date[1],day=_date[2])
+    difference = (current-lastnew_moon).total_seconds()/(60*60*24)
+    number_of_newmoons = difference/lunar_cycle
+    phase_diff = number_of_newmoons - round(number_of_newmoons)
+    age, phase_image,name = phase_diff*lunar_cycle, None, None
+    if age >= 0 and age < 0.5:
+        phase_image = path.join("assets", "newmoon.png")
+        name = "New Moon"
+    elif age >= 0.5 and age <= 6.387:
+        phase_image = path.join("assets", "waxing_cresent.png")
+        name = "Waxing Crescent"
+    elif age > 6.387 and age <= 9:
+        phase_image = path.join("assets","first_quarter.png")
+        name = "First Quarter"
+    elif age > 9 and age <= 13.8:
+        phase_image = path.join("assets","waxing_gibbous.png")
+        name = "Waxing Gibbous"
+    elif age > 13.8 and age <= 15:
+        phase_image =  path.join("assets","full_moon.png")
+        name = "Full Moon"
+    elif age > 15 and age <= 21.9:
+        phase_image = path.join("assets","wanning_gibbous.jpeg")
+        name = "Wanning Gibbous"
+    elif age > 21.9 and age <= 23.3:
+        phase_image = path.join("assets","last_quarter.png")
+        name = "Last Quarter"
+    elif age > 23.3 and age <= 28.9:
+        phase_image = path.join("assets","wanning_cresent.png")
+        name = "Wanning Crescent"
+    elif age > 28.9 and age <= lunar_cycle:
+        phase_image = path.join("assets","newmoon.png")
+        name = "New Moon"
+    return (age, phase_image, name)
+
+def renderMoonPhase(root):
+    def renderer():
+        local_time = strftime("%Y-%m-%d")
+        age, phase, name = getMoonPhase(local_time)
+        _image = ctk.CTkImage(
+          light_image=Image.open(phase),dark_image=Image.open(phase),
+          size=(500,500)
+        )
+        imagelabel = ctk.CTkLabel(root,text="",image=_image)
+        imagelabel.place(relx=0.5,rely=0.3,anchor=tk.CENTER)
+        moonphaselabel = ctk.CTkLabel(
+          root,text=f"{name}",font=('monospace',36,'bold')
+        )
+        moon_agelabel = ctk.CTkLabel(
+          root,text=f"Age: {round(age,3)} days",font=('monospace',35)
+        )
+        moonphaselabel.place(relx=0.49,rely=0.7,anchor=tk.CENTER)
+        moon_agelabel.place(relx=0.49,rely=0.8,anchor=tk.CENTER)
+        root.after(1200000, renderer)
+        return
+    renderer()
     return
     
 def renderTime(root, height, width):
@@ -261,6 +324,7 @@ def alarmMenu(parent, parent_height,parent_width):
     newAlarmBtn.place(relx=0.48,rely=0.089,anchor=tk.CENTER)
     return
 
+# delete the alarm with an id
 def deleteAlarmWithId(alarm_id):
     confirm_dialog = tk.messagebox.askquestion(
       "alarms","Do you really want to delete this alarm?"
@@ -312,6 +376,7 @@ def displayTab(app,_height,_width):
         button.place(relx=0.01,rely=y_positioning/_height*100)
         y_positioning += 0.9
     renderTime(tabview.tab(tablist[0]),_height*0.86,_width*0.96)
+    renderMoonPhase(tabview.tab(tablist[1]))
     alarmMenu(tabview.tab(tablist[2]),_height*0.86,_width*0.96)
     settings(app, tabview.tab(tablist[3]))
     return
