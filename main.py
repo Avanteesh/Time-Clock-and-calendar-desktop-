@@ -5,9 +5,9 @@ from calendar import monthcalendar
 from time import strftime
 from requests import get
 from json import loads, dumps
-from os import path, mkdir
+from os import path, mkdir, getenv
 from uuid import uuid4
-from datetime import date
+from datetime import date, timedelta
 from PIL import Image
 
 class Window:
@@ -114,6 +114,17 @@ def getMoonPhase(_date):
     return (age, phase_image, name)
 
 def renderMoonPhase(root):
+    # find the next occurring full moon! 
+    def getNextFullMoon(initdate):
+        parsed, full_moon_age = list(map(int, initdate.split("-"))), 13.8 # days
+        phase, dayselapsed = getMoonPhase(initdate)[0], None
+        if (full_moon_age-phase) < 0:
+            dayselapsed = ((29.5308 - phase) + full_moon_age)
+        else:
+            dayselapsed = full_moon_age - phase
+        next_full_moon = date(year=parsed[0],month=parsed[1],day=parsed[2])
+        return next_full_moon + timedelta(days=round(dayselapsed))
+    # render moon phases!
     def renderer():
         local_time = strftime("%Y-%m-%d")
         age, phase, name = getMoonPhase(local_time)
@@ -129,6 +140,11 @@ def renderMoonPhase(root):
         moon_agelabel = ctk.CTkLabel(
           root,text=f"Age: {round(age,3)} days",font=('monospace',35)
         )
+        next_full_moon = ctk.CTkLabel(
+          root,text=f"Next Full Moon: {getNextFullMoon(local_time)}",
+          font=('monospace',30)
+        )
+        next_full_moon.place(relx=0.49,rely=0.89,anchor=tk.CENTER)
         moonphaselabel.place(relx=0.49,rely=0.7,anchor=tk.CENTER)
         moon_agelabel.place(relx=0.49,rely=0.8,anchor=tk.CENTER)
         root.after(1200000, renderer)
@@ -347,9 +363,16 @@ def deleteAlarmWithId(alarm_id):
 def fireAlarmNotification(root, time):
     notify.init("My Clock")
     notification = notify.Notification(f"its {time}")
+    newYearNotification = notify.Notification(
+      f"Happy New Year {getenv("USER")}", 
+      '''Every new year brings an new 
+      opportuinity. Hope you have a Great New Year!'''
+    )
     def helper():
         if time == strftime("%H:%M"):
             notification.show()  # display notification!
+        if strftime("%m-%d") == "01-01":
+            newYearNotification.show()
         root.after(10000, helper)
     helper()
     return
