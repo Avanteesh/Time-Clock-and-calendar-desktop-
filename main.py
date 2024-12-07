@@ -11,7 +11,7 @@ from PIL import Image
 
 class Window:
     # window_initializer
-    def __init__(self,_title,height,width,theme="system"):
+    def __init__(self,_title: str,height: int,width: int,theme: str="system"):
         self.dim = {"height":height,"width":width}
         self.__root = ctk.CTk()
         self.__root.title(f"{_title}")
@@ -33,10 +33,10 @@ class DefaultCheckBox:
         )
         self.checkbox.grid(padx=4,pady=4)
         
-    def setPosition(self,x,y):
+    def setPosition(self,x: int,y: int) -> None:
         self.checkbox.place(relx=x,rely=y,anchor=tk.CENTER)
 
-def calendarWidget(root,date,height,width):
+def calendarWidget(root,date: str,height: int,width: int) -> None:
     Months = [
        "January","February","March","April","May","June",
        "July","August","September","October","November","December"
@@ -74,7 +74,7 @@ def calendarWidget(root,date,height,width):
         d_y += spaceing_factor
     return
 
-def getMoonPhase(_date):
+def getMoonPhase(_date: str) -> tuple:
     lunar_cycle = 29.53088  # lunar cycle is approximately 29.5308 days
     _date = list(map(int, _date.split("-")))
     lastnew_moon = date(year=2018,month=12,day=7)
@@ -86,19 +86,19 @@ def getMoonPhase(_date):
     if age >= 0 and age < 0.5:
         phase_image = path.join("assets", "newmoon.png")
         name = "New Moon"
-    elif age >= 0.5 and age <= 6.387:
+    elif age >= 0.5 and age <= 7.1:
         phase_image = path.join("assets", "waxing_cresent.png")
         name = "Waxing Crescent"
-    elif age > 6.387 and age <= 9:
+    elif age > 7.1 and age <= 7.99:
         phase_image = path.join("assets","first_quarter.png")
         name = "First Quarter"
-    elif age > 9 and age <= 13.8:
+    elif age > 7.99 and age <= 13.9:
         phase_image = path.join("assets","waxing_gibbous.png")
         name = "Waxing Gibbous"
-    elif age > 13.8 and age <= 15:
+    elif age >= 14 and age <= 15.1:
         phase_image =  path.join("assets","full_moon.png")
         name = "Full Moon"
-    elif age > 15 and age <= 21.9:
+    elif age > 15.1 and age <= 21.9:
         phase_image = path.join("assets","wanning_gibbous.jpeg")
         name = "Wanning Gibbous"
     elif age > 21.9 and age <= 23.3:
@@ -112,9 +112,9 @@ def getMoonPhase(_date):
         name = "New Moon"
     return (age, phase_image, name)
 
-def renderMoonPhase(root):
+def renderMoonPhase(root) -> None:
     # find the next occurring full moon! 
-    def getNextFullMoon(initdate):
+    def getNextFullMoon(initdate: str) -> int:
         parsed, full_moon_age = list(map(int, initdate.split("-"))), 13.8 # days
         phase, dayselapsed = getMoonPhase(initdate)[0], None
         if (full_moon_age-phase) < 0:
@@ -124,7 +124,7 @@ def renderMoonPhase(root):
         next_full_moon = date(year=parsed[0],month=parsed[1],day=parsed[2])
         return next_full_moon + timedelta(days=round(dayselapsed))
     # render moon phases!
-    def renderer():
+    def renderer() -> None:
         local_time = strftime("%Y-%m-%d")
         age, phase, name = getMoonPhase(local_time)
         _image = ctk.CTkImage(
@@ -151,9 +151,9 @@ def renderMoonPhase(root):
     renderer()
     return
     
-def renderTime(root, height, width):
+def renderTime(root, height: int, width: int) -> None:
     # time renderer 
-    def renderCall():
+    def renderCall() -> None:
         local_time = strftime("%H:%M:%S") 
         time_label = ctk.CTkLabel(
           root,text=local_time,font=('monospace',66,"bold"),
@@ -171,7 +171,7 @@ def renderTime(root, height, width):
     dateRenderer()
     return
 
-def createCheckBoxLis(parent, height, width, datalist):
+def createCheckBoxLis(parent,height: int,width: int,datalist: dict[str])-> None:
     def appendData(name):
         if not "days" in datalist:
             datalist["days"] = []
@@ -199,12 +199,12 @@ def createCheckBoxLis(parent, height, width, datalist):
     return
 
 # save alarm into a file-stream 
-def saveFormData(parent, datalist):
+def saveFormData(parent, datalist: dict[str]) -> None:
     # perform form data validation
     if "days" not in datalist:
         datalist["days"] = "repeat everyday"
     hours, minute = datalist["hours"].get(), datalist["minute"].get()
-    isValidTime = lambda hour, minute: (hour <= 23 and hour >= 0) and (minute >= 0 and minute <= 59)
+    isValidTime = lambda hour,minute:(hour <= 23 and hour >= 0) and (minute >= 0 and minute <= 59)
     if (not hours.isdigit() or not minute.isdigit()):
         messagebox = tk.messagebox.showerror("Error", "The inputs you gave are not valid Time stamp!")
         return  # display error message
@@ -233,7 +233,7 @@ def saveFormData(parent, datalist):
     return
 
 # render and Handle Alarm Input from user!
-def alarmInputForm():
+def alarmInputForm() -> None:
     formwindow = Window("set alarm", 550, 422,"dark") # create a small window for a form input
     formroot = formwindow.root               # root tkinter element of Window
     datalist = {"hours":tk.StringVar(formroot),"minute":tk.StringVar(formroot)}
@@ -265,7 +265,7 @@ def alarmInputForm():
     formroot.mainloop()     # form window loop
     return
 
-def subtractTime(inittimestring):
+def subtractTime(inittimestring: str) -> tuple[int]:
     target = list(map(int, inittimestring.split(":"))) 
     now = list(map(int, strftime("%H:%M").split(":")))
     if target[0] == now[0]:
@@ -284,7 +284,7 @@ def subtractTime(inittimestring):
         return (23,abs(minute_diff))
     return (hour_diff, minute_diff)
 
-def alarmMenu(parent, parent_height,parent_width):
+def alarmMenu(parent, parent_height: int,parent_width: int) -> None:
     newAlarmBtn = ctk.CTkButton(
       parent,text="new alarm",height=50,width=80,
       font=('monospace',18,'bold'),command=alarmInputForm
@@ -359,7 +359,7 @@ def deleteAlarmWithId(alarm_id):
         f2.write(dumps(alarmlist))   # stringify and save the updated buffer
     return
 
-def fireAlarmNotification(root, time):
+def fireAlarmNotification(root, time: str):
     notify.init("My Clock")
     notification = notify.Notification(f"its {time}")
     newYearNotification = notify.Notification(
@@ -376,7 +376,7 @@ def fireAlarmNotification(root, time):
     helper()
     return
 
-def displayTab(app,_height,_width):
+def displayTab(app,_height: int,_width: int):
     # navbar button procedure
     navBarBtns = lambda _text: ctk.CTkButton(
       app,text=_text,height=49,width=160,
@@ -403,7 +403,7 @@ def displayTab(app,_height,_width):
     settings(app, tabview.tab(tablist[3]))
     return
 
-def settings(window, parent):
+def settings(window, parent) -> None:
     header = ctk.CTkLabel(parent,text="Settings", font=('sans-serif',39,'bold'))
     header.grid(padx=3,pady=3)
     header.place(relx=0.2,rely=0.08,anchor=tk.CENTER)
@@ -430,7 +430,7 @@ def settings(window, parent):
     bgChangeLabel.place(relx=0.8,rely=0.31,anchor=tk.CENTER)
     return
 
-def main():
+def main() -> None:
     app = Window("My Clock",900,760,"dark")
     root = app.root
     displayTab(root,app.dim["height"],app.dim["width"])
