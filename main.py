@@ -4,7 +4,7 @@ import notify2 as notify
 from calendar import monthcalendar
 from time import strftime
 from json import loads, dumps
-from os import path, mkdir, getenv
+from os import path, mkdir, getenv, getcwd
 from uuid import uuid4
 from datetime import date, timedelta
 from PIL import Image
@@ -84,31 +84,31 @@ def getMoonPhase(_date: str) -> tuple:
     phase_diff = number_of_newmoons - round(number_of_newmoons)
     age, phase_image,name = phase_diff*lunar_cycle, None, None
     if age >= 0 and age < 0.5:
-        phase_image = path.join("assets", "newmoon.png")
+        phase_image = path.join(f"{getcwd()}","assets","newmoon.png")
         name = "New Moon"
     elif age >= 0.5 and age <= 7.1:
-        phase_image = path.join("assets", "waxing_cresent.png")
+        phase_image = path.join(f"{getcwd()}","assets","waxing_cresent.png")
         name = "Waxing Crescent"
     elif age > 7.1 and age <= 7.99:
-        phase_image = path.join("assets","first_quarter.png")
+        phase_image = path.join(f"{getcwd()}","assets","first_quarter.png")
         name = "First Quarter"
     elif age > 7.99 and age <= 13.9:
-        phase_image = path.join("assets","waxing_gibbous.png")
+        phase_image = path.join(f"{getcwd()}", "assets","waxing_gibbous.png")
         name = "Waxing Gibbous"
     elif age >= 14 and age <= 15.1:
-        phase_image =  path.join("assets","full_moon.png")
+        phase_image =  path.join(f"{getcwd()}","assets","full_moon.png")
         name = "Full Moon"
     elif age > 15.1 and age <= 21.9:
-        phase_image = path.join("assets","wanning_gibbous.jpeg")
+        phase_image = path.join(f"{getcwd()}","assets","wanning_gibbous.jpeg")
         name = "Wanning Gibbous"
     elif age > 21.9 and age <= 23.3:
-        phase_image = path.join("assets","last_quarter.png")
+        phase_image = path.join(f"{getcwd()}", "assets","last_quarter.png")
         name = "Last Quarter"
     elif age > 23.3 and age <= 28.9:
-        phase_image = path.join("assets","wanning_cresent.png")
+        phase_image = path.join(f"{getcwd()}", "assets","wanning_cresent.png")
         name = "Wanning Crescent"
     elif age > 28.9 and age <= lunar_cycle:
-        phase_image = path.join("assets","newmoon.png")
+        phase_image = path.join(f"{getcwd()}", "assets","newmoon.png")
         name = "New Moon"
     return (age, phase_image, name)
 
