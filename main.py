@@ -75,13 +75,13 @@ def calendarWidget(root,date: str,height: int,width: int) -> None:
     return
 
 def getMoonPhase(_date: str) -> tuple:
-    lunar_cycle = 29.53088  # lunar cycle is approximately 29.5308 days
-    _date = list(map(int, _date.split("-")))
+    lunar_cycle: float = 29.53088  # lunar cycle is approximately 29.5308 days
+    _date: list[int] = list(map(int, _date.split("-")))
     lastnew_moon = date(year=2018,month=12,day=7)
     current = date(year=_date[0],month=_date[1],day=_date[2])
-    difference = (current-lastnew_moon).total_seconds()/(60*60*24)
-    number_of_newmoons = difference/lunar_cycle
-    phase_diff = number_of_newmoons - round(number_of_newmoons)
+    difference: float = (current-lastnew_moon).total_seconds()/(60*60*24)
+    number_of_newmoons: float = difference/lunar_cycle
+    phase_diff: float = number_of_newmoons - int(number_of_newmoons)
     age, phase_image,name = phase_diff*lunar_cycle, None, None
     if age >= 0 and age < 0.5:
         phase_image = path.join(f"{getcwd()}","assets","newmoon.png")
@@ -92,10 +92,10 @@ def getMoonPhase(_date: str) -> tuple:
     elif age > 7.1 and age <= 7.99:
         phase_image = path.join(f"{getcwd()}","assets","first_quarter.png")
         name = "First Quarter"
-    elif age > 7.99 and age <= 13.9:
+    elif age > 7.99 and age <= 13.8:
         phase_image = path.join(f"{getcwd()}", "assets","waxing_gibbous.png")
         name = "Waxing Gibbous"
-    elif age >= 14 and age <= 15.1:
+    elif age > 13.8 and age <= 15.1:
         phase_image =  path.join(f"{getcwd()}","assets","full_moon.png")
         name = "Full Moon"
     elif age > 15.1 and age <= 21.9:
